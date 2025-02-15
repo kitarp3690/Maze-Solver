@@ -14,9 +14,9 @@ class Maze():
                                     [0,0,0,0,0],
                                     [1,0,0,0,0],
                                     [1,1,1,0,0]
-                                    ])
+                                    ],dtype=int)
         self.initial_state_rows, self.initial_state_colums = self.initial_state.shape
-        print(self.initial_state_rows, self.initial_state_colums)
+        # print(self.initial_state_rows, self.initial_state_colums)
 
     def set_initial_and_goal_cell(self)->None:
         """Takes input for both the initial and goal cell positions"""
@@ -37,33 +37,87 @@ class Maze():
             except ValueError:
                 print("Invalid input! Please enter two cell positions as 'row1,col1 row2,col2' (e.g., '0,1 3,4'). \nNote is needed between after inital cell postion")
     
-    def calculate_heuristic_value(self, state:np)->int:
-        heursitic:int = 0
+    def calculate_heuristic_value(self, state: tuple[int,int])->int:
+        """This calculates the heuristic value(also known as Manhattan distance)"""
+        # heursitic:int = 0
+        goal_i, goal_j = self.goal_cell
+        # print(goal_i,goal_j)
+        # heursitic += abs(i - goal_i) + abs(j - goal_j)
+        return abs(state[0] - goal_i) + abs(state[1] - goal_j)
 
     def possible_moves(self, start_cell, goal_cell, given_state:np)->list:
+        """Generating all possible moves from given_state position and adding 2 in the path"""
         moves:list[tuple[int, int]] = []
         directions:list[tuple[int, int]] = [(-1,0),(1,0),(0,-1),(0,1)] # Up, Down, Left, Right
         d = 0
         for dx, dy in directions:
             new_x, new_y = start_cell[0] + dx, start_cell[1] + dy
             
-            if 0 <= new_x < self.initial_state_rows-1 and 0 <= new_y < self.initial_state_colums-1 and given_state[new_x, new_y] != 1:
-                print(d)
-                new_state = given_state.copy()
-                new_state[start_cell[0], start_cell[1]], new_state[new_x, new_y] = new_state[new_x, new_y], new_state[start_cell[0], start_cell[1]]
-                moves.append(new_state)
+            if (
+                0 <= new_x < self.initial_state_rows 
+                and 0 <= new_y < self.initial_state_colums 
+                and given_state[new_x, new_y] != 1
+            ):
+                # print(d)
+                # new_state = given_state.copy()
+                # new_state[start_cell[0], start_cell[1]], new_state[new_x, new_y] = new_state[new_x, new_y], new_state[start_cell[0], start_cell[1]]
+                # new_state[start_cell[0], start_cell[1]], new_state[new_x, new_y] = 2, 2
+                moves.append((new_x, new_y))
             d += 1
         return moves
 
     def a_star(self):
-        for move in Maze().possible_moves(self.initial_cell, self.goal_cell, self.initial_state):
-            print(f'm={move}')
-        # moves = self.possible_moves(self.initial_cell, self.goal_cell, self.initial_state)
-        print(self.initial_state)
-        # print(moves)
+        """Solving the maze using A* algorithm"""
+        priority_queue = []
+        came_from = {} # To reconstruct path
+        g_costs = {self.initial_cell: 0}
+        
+        heapq.heappush(priority_queue,(self.calculate_heuristic_value(self.initial_cell), 0, self.initial_cell))
 
-    def print_solution(self):
-        pass
+        visited = set()
+        
+        while priority_queue:
+            _, g, current_cell = heapq.heappop(priority_queue)
+
+            # If this state is the goal state
+            if current_cell == self.goal_cell:
+                print("Goal Reached")
+                self.print_solution(came_from)
+                return 
+            
+            visited.add(current_cell)
+            
+        # print(f"Initial_state: \n{self.initial_state}\n")
+            for move in self.possible_moves(current_cell, self.goal_cell, self.initial_state):
+                # print(f'm={move}')
+                pos_move = tuple(move)
+
+                if pos_move in visited:
+                    continue
+                new_g = g + 1 # g means no. of move
+
+                if pos_move not in g_costs or new_g < g_costs[pos_move]:
+                    g_costs[pos_move] = new_g
+                    f = new_g + self.calculate_heuristic_value(pos_move)  # f = g + h
+                    heapq.heappush(priority_queue, (f, new_g, pos_move))
+                    came_from[pos_move] = current_cell  # Store parent node
+        print("No Solution Found")
+
+    def print_solution(self, came_from: dict):
+        path=[]
+        current = self.goal_cell
+
+        while current != self.initial_cell:
+            path.append(current)
+            current = came_from.get(current)
+
+            if current is None:
+                print("No valid path found.")
+                return
+        path.append(self.initial_cell)
+        path.reverse()
+
+        print("Path to goal:", path)
 
 if __name__ == '__main__':
     maze = Maze()
