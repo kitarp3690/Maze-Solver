@@ -22,6 +22,7 @@ class Maze():
         """Takes input for both the initial and goal cell positions"""
         while True:
             try:
+                print("\nHint: for 1st row 2nd column write 0,1 ")
                 user_input = input("Enter initial and goal cell positions as (row1,col1 row2,col2): ")
                 positions = user_input.split()  # Splitting input by space
                 # print(positions)
@@ -33,9 +34,23 @@ class Maze():
                 
                 if len(self.initial_cell) != 2 or len(self.goal_cell) != 2:
                     raise ValueError  # Ensures two values in each tuple
+
+                # Checking if the positions are within the maze boundaries
+                if not (0 <= self.initial_cell[0] < self.initial_state_rows and 
+                        0 <= self.initial_cell[1] < self.initial_state_colums and
+                        0 <= self.goal_cell[0] < self.initial_state_rows and 
+                        0 <= self.goal_cell[1] < self.initial_state_colums):
+                    raise ValueError  
+
+                # Ensuring that the selected positions are not blocked (1 in the maze)
+                if (self.initial_state[self.initial_cell] == 1 or
+                    self.initial_state[self.goal_cell] == 1):
+                    print("\nInvalid selection! Initial or goal cell is blocked (1). Try again.")
+                    continue  # Restart the loop
+
                 break  # Exit loop if input is valid
             except ValueError:
-                print("Invalid input! Please enter two cell positions as 'row1,col1 row2,col2' (e.g., '0,1 3,4'). \nNote is needed between after inital cell postion")
+                print("\nInvalid input! Please enter two cell positions as 'row1,col1 row2,col2' (e.g., '0,1 3,4'). \nNote is needed between after inital cell postion")
     
     def calculate_heuristic_value(self, state: tuple[int,int])->int:
         """This calculates the heuristic value(also known as Manhattan distance)"""
